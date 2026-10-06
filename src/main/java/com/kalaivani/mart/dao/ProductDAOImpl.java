@@ -24,36 +24,33 @@ public class ProductDAOImpl implements ProductDAO {
     }
 
     @Override
-    public List<Product> searchProducts(
-            String keyword,
-            String category
-    ) throws Exception {
+    public List<Product> findBySeller(long sellerId)
+            throws Exception {
 
         List<Product> products = new ArrayList<>();
 
         String sql = """
-                SELECT id, seller_id, name, description,
-                       price, stock_qty, category
+                SELECT id,
+                       seller_id,
+                       name,
+                       description,
+                       price,
+                       stock_qty,
+                       category
                 FROM products
-                WHERE LOWER(name) LIKE ?
-                  AND LOWER(category) LIKE ?
+                WHERE seller_id = ?
                 ORDER BY id
                 """;
 
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection =
+                     dataSource.getConnection();
              PreparedStatement statement =
                      connection.prepareStatement(sql)) {
 
-            String keywordValue =
-                    keyword == null ? "" : keyword.trim().toLowerCase();
+            statement.setLong(1, sellerId);
 
-            String categoryValue =
-                    category == null ? "" : category.trim().toLowerCase();
-
-            statement.setString(1, "%" + keywordValue + "%");
-            statement.setString(2, "%" + categoryValue + "%");
-
-            try (ResultSet resultSet = statement.executeQuery()) {
+            try (ResultSet resultSet =
+                         statement.executeQuery()) {
 
                 while (resultSet.next()) {
 
@@ -76,31 +73,134 @@ public class ProductDAOImpl implements ProductDAO {
     }
 
     @Override
-    public void addProduct(Product product) throws Exception {
+    public List<Product> searchProducts(
+            String keyword,
+            String category)
+            throws Exception {
+
+        List<Product> products = new ArrayList<>();
 
         String sql = """
-                INSERT INTO products
-                (seller_id, name, description, price, stock_qty, category)
-                VALUES (?, ?, ?, ?, ?, ?)
+                SELECT id,
+                       seller_id,
+                       name,
+                       description,
+                       price,
+                       stock_qty,
+                       category
+                FROM products
+                WHERE LOWER(name) LIKE ?
+                  AND LOWER(category) LIKE ?
+                ORDER BY id
                 """;
 
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection =
+                     dataSource.getConnection();
              PreparedStatement statement =
                      connection.prepareStatement(sql)) {
 
-            statement.setLong(1, product.getSellerId());
-            statement.setString(2, product.getName());
-            statement.setString(3, product.getDescription());
-            statement.setDouble(4, product.getPrice());
-            statement.setInt(5, product.getStockQty());
-            statement.setString(6, product.getCategory());
+            String keywordValue =
+                    keyword == null
+                            ? ""
+                            : keyword.trim().toLowerCase();
+
+            String categoryValue =
+                    category == null
+                            ? ""
+                            : category.trim().toLowerCase();
+
+            statement.setString(
+                    1,
+                    "%" + keywordValue + "%"
+            );
+
+            statement.setString(
+                    2,
+                    "%" + categoryValue + "%"
+            );
+
+            try (ResultSet resultSet =
+                         statement.executeQuery()) {
+
+                while (resultSet.next()) {
+
+                    Product product = new Product(
+                            resultSet.getLong("id"),
+                            resultSet.getLong("seller_id"),
+                            resultSet.getString("name"),
+                            resultSet.getString("description"),
+                            resultSet.getDouble("price"),
+                            resultSet.getInt("stock_qty"),
+                            resultSet.getString("category")
+                    );
+
+                    products.add(product);
+                }
+            }
+        }
+
+        return products;
+    }
+
+    @Override
+    public void addProduct(Product product)
+            throws Exception {
+
+        String sql = """
+                INSERT INTO products
+                (
+                    seller_id,
+                    name,
+                    description,
+                    price,
+                    stock_qty,
+                    category
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """;
+
+        try (Connection connection =
+                     dataSource.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setLong(
+                    1,
+                    product.getSellerId()
+            );
+
+            statement.setString(
+                    2,
+                    product.getName()
+            );
+
+            statement.setString(
+                    3,
+                    product.getDescription()
+            );
+
+            statement.setDouble(
+                    4,
+                    product.getPrice()
+            );
+
+            statement.setInt(
+                    5,
+                    product.getStockQty()
+            );
+
+            statement.setString(
+                    6,
+                    product.getCategory()
+            );
 
             statement.executeUpdate();
         }
     }
 
     @Override
-    public void updateProduct(Product product) throws Exception {
+    public void updateProduct(Product product)
+            throws Exception {
 
         String sql = """
                 UPDATE products
@@ -110,33 +210,72 @@ public class ProductDAOImpl implements ProductDAO {
                     stock_qty = ?,
                     category = ?
                 WHERE id = ?
+                  AND seller_id = ?
                 """;
 
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection =
+                     dataSource.getConnection();
              PreparedStatement statement =
                      connection.prepareStatement(sql)) {
 
-            statement.setString(1, product.getName());
-            statement.setString(2, product.getDescription());
-            statement.setDouble(3, product.getPrice());
-            statement.setInt(4, product.getStockQty());
-            statement.setString(5, product.getCategory());
-            statement.setLong(6, product.getId());
+            statement.setString(
+                    1,
+                    product.getName()
+            );
+
+            statement.setString(
+                    2,
+                    product.getDescription()
+            );
+
+            statement.setDouble(
+                    3,
+                    product.getPrice()
+            );
+
+            statement.setInt(
+                    4,
+                    product.getStockQty()
+            );
+
+            statement.setString(
+                    5,
+                    product.getCategory()
+            );
+
+            statement.setLong(
+                    6,
+                    product.getId()
+            );
+
+            statement.setLong(
+                    7,
+                    product.getSellerId()
+            );
 
             statement.executeUpdate();
         }
     }
 
     @Override
-    public void deleteProduct(long id) throws Exception {
+    public void deleteProduct(
+            long id,
+            long sellerId)
+            throws Exception {
 
-        String sql = "DELETE FROM products WHERE id = ?";
+        String sql = """
+                DELETE FROM products
+                WHERE id = ?
+                  AND seller_id = ?
+                """;
 
-        try (Connection connection = dataSource.getConnection();
+        try (Connection connection =
+                     dataSource.getConnection();
              PreparedStatement statement =
                      connection.prepareStatement(sql)) {
 
             statement.setLong(1, id);
+            statement.setLong(2, sellerId);
 
             statement.executeUpdate();
         }

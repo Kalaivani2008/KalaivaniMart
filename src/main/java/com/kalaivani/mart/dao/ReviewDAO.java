@@ -6,14 +6,12 @@ import java.util.List;
 
 public interface ReviewDAO {
 
-    void addReview(
-            long productId,
-            long userId,
-            int rating,
-            String comment
-    ) throws Exception;
+    void addReview(long productId, long userId, int rating, String comment)
+            throws Exception;
 
-    List<Review> getReviewsByProduct(
-            long productId
-    ) throws Exception;
+    List<Review> getReviewsByProduct(long productId)
+            throws Exception;
+
+    boolean canReviewProduct(long userId, long productId)
+            throws Exception;
 }

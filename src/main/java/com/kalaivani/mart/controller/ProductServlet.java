@@ -9,9 +9,11 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
 import java.io.IOException;
+import java.util.List;
 
 @WebServlet("/seller/products")
 public class ProductServlet extends HttpServlet {
@@ -25,7 +27,14 @@ public class ProductServlet extends HttpServlet {
                 (DataSource) getServletContext()
                         .getAttribute("dataSource");
 
-        productDAO = new ProductDAOImpl(dataSource);
+        if (dataSource == null) {
+            throw new ServletException(
+                    "DataSource not available"
+            );
+        }
+
+        productDAO =
+                new ProductDAOImpl(dataSource);
     }
 
     @Override
@@ -34,11 +43,46 @@ public class ProductServlet extends HttpServlet {
             HttpServletResponse response)
             throws ServletException, IOException {
 
+            System.out.println(">>> SELLER ProductServlet DOGET CALLED <<<");
+
         try {
+
+            HttpSession session =
+                    request.getSession(false);
+
+            if (session == null ||
+                    session.getAttribute("userId") == null) {
+
+                response.sendRedirect(
+                        request.getContextPath()
+                                + "/login.jsp"
+                );
+
+                return;
+            }
+
+            String role =
+                    (String) session.getAttribute("role");
+
+            if (!"SELLER".equalsIgnoreCase(role)) {
+
+                response.sendError(
+                        HttpServletResponse.SC_FORBIDDEN,
+                        "Seller access required"
+                );
+
+                return;
+            }
+
+            long sellerId =
+                    (Long) session.getAttribute("userId");
+
+            List<Product> products =
+                    productDAO.findBySeller(sellerId);
 
             request.setAttribute(
                     "products",
-                    productDAO.findAll()
+                    products
             );
 
             request.getRequestDispatcher(
@@ -49,8 +93,9 @@ public class ProductServlet extends HttpServlet {
 
             e.printStackTrace();
 
-            response.sendError(
-                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            throw new ServletException(
+                    "Unable to load seller products",
+                    e
             );
         }
     }
@@ -63,97 +108,144 @@ public class ProductServlet extends HttpServlet {
 
         try {
 
-            String action = request.getParameter("action");
+            HttpSession session =
+                    request.getSession(false);
+
+            if (session == null ||
+                    session.getAttribute("userId") == null) {
+
+                response.sendRedirect(
+                        request.getContextPath()
+                                + "/login.jsp"
+                );
+
+                return;
+            }
+
+            String role =
+                    (String) session.getAttribute("role");
+
+            if (!"SELLER".equalsIgnoreCase(role)) {
+
+                response.sendError(
+                        HttpServletResponse.SC_FORBIDDEN,
+                        "Seller access required"
+                );
+
+                return;
+            }
+
+            long sellerId =
+                    (Long) session.getAttribute("userId");
+
+            String action =
+                    request.getParameter("action");
 
             if ("add".equals(action)) {
 
-                addProduct(request);
+                String name =
+                        request.getParameter("name");
+
+                String description =
+                        request.getParameter("description");
+
+                double price =
+                        Double.parseDouble(
+                                request.getParameter("price")
+                        );
+
+                int stockQty =
+                        Integer.parseInt(
+                                request.getParameter("stockQty")
+                        );
+
+                String category =
+                        request.getParameter("category");
+
+                Product product =
+                        new Product();
+
+                product.setSellerId(sellerId);
+                product.setName(name);
+                product.setDescription(description);
+                product.setPrice(price);
+                product.setStockQty(stockQty);
+                product.setCategory(category);
+
+                productDAO.addProduct(product);
 
             } else if ("update".equals(action)) {
 
-                updateProduct(request);
+                long id =
+                        Long.parseLong(
+                                request.getParameter("id")
+                        );
+
+                String name =
+                        request.getParameter("name");
+
+                String description =
+                        request.getParameter("description");
+
+                double price =
+                        Double.parseDouble(
+                                request.getParameter("price")
+                        );
+
+                int stockQty =
+                        Integer.parseInt(
+                                request.getParameter("stockQty")
+                        );
+
+                String category =
+                        request.getParameter("category");
+
+                Product product =
+                        new Product();
+
+                product.setId(id);
+                product.setSellerId(sellerId);
+                product.setName(name);
+                product.setDescription(description);
+                product.setPrice(price);
+                product.setStockQty(stockQty);
+                product.setCategory(category);
+
+                productDAO.updateProduct(product);
 
             } else if ("delete".equals(action)) {
 
-                long id = Long.parseLong(
-                        request.getParameter("id")
-                );
+                long id =
+                        Long.parseLong(
+                                request.getParameter("id")
+                        );
 
-                productDAO.deleteProduct(id);
+                productDAO.deleteProduct(
+                        id,
+                        sellerId
+                );
             }
 
             response.sendRedirect(
-                    request.getContextPath() + "/seller/products"
+                    request.getContextPath()
+                            + "/seller/products"
+            );
+
+        } catch (NumberFormatException e) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "Invalid product data"
             );
 
         } catch (Exception e) {
 
             e.printStackTrace();
 
-            response.sendError(
-                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+            throw new ServletException(
+                    "Product operation failed",
+                    e
             );
         }
-    }
-
-    private void addProduct(
-            HttpServletRequest request)
-            throws Exception {
-
-        HttpServletRequest req = request;
-
-        long sellerId = Long.parseLong(
-                (String) req.getSession()
-                        .getAttribute("userId")
-        );
-
-        Product product = new Product();
-
-        product.setSellerId(sellerId);
-        product.setName(req.getParameter("name"));
-        product.setDescription(req.getParameter("description"));
-        product.setPrice(
-                Double.parseDouble(req.getParameter("price"))
-        );
-        product.setStockQty(
-                Integer.parseInt(req.getParameter("stockQty"))
-        );
-        product.setCategory(req.getParameter("category"));
-
-        productDAO.addProduct(product);
-    }
-
-    private void updateProduct(
-            HttpServletRequest request)
-            throws Exception {
-
-        Product product = new Product();
-
-        product.setId(
-                Long.parseLong(request.getParameter("id"))
-        );
-
-        product.setName(request.getParameter("name"));
-        product.setDescription(
-                request.getParameter("description")
-        );
-
-        product.setPrice(
-                Double.parseDouble(
-                        request.getParameter("price")
-                )
-        );
-
-        product.setStockQty(
-                Integer.parseInt(
-                        request.getParameter("stockQty")
-                )
-        );
-
-        product.setCategory(
-                request.getParameter("category")
-        );
-
-        productDAO.updateProduct(product);
     }
 }

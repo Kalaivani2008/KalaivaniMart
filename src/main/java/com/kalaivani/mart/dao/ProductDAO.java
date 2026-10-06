@@ -1,11 +1,14 @@
 package com.kalaivani.mart.dao;
 
 import com.kalaivani.mart.model.Product;
+
 import java.util.List;
 
 public interface ProductDAO {
 
     List<Product> findAll() throws Exception;
+
+    List<Product> findBySeller(long sellerId) throws Exception;
 
     List<Product> searchProducts(
             String keyword,
@@ -16,5 +19,5 @@ public interface ProductDAO {
 
     void updateProduct(Product product) throws Exception;
 
-    void deleteProduct(long id) throws Exception;
+    void deleteProduct(long id, long sellerId) throws Exception;
 }
