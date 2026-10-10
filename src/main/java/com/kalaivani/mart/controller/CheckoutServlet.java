@@ -67,6 +67,9 @@ public class CheckoutServlet extends HttpServlet {
                                     .toString()
                     );
 
+                    System.out.println("CHECKOUT BUYER ID = " + buyerId);
+System.out.println("CHECKOUT SESSION ID = " + session.getId());
+
 
             Order order =
                     orderDAO.createOrderFromCart(

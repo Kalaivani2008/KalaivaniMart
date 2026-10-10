@@ -11,6 +11,7 @@
         body {
             font-family: Arial, sans-serif;
             margin: 30px;
+            background-color: #f5f5f5;
         }
 
         h1 {
@@ -22,48 +23,56 @@
         }
 
         .nav a {
-            margin-right: 15px;
+            margin-right: 10px;
+            text-decoration: none;
+            color: #0066cc;
         }
 
         .search-box {
-            border: 1px solid #ccc;
-            padding: 15px;
-            margin-bottom: 25px;
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
         }
 
         .product {
-            border: 1px solid #ccc;
+            background: white;
             padding: 20px;
             margin-bottom: 20px;
-            width: 650px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .product h2 {
             margin-top: 0;
+            color: #222;
         }
 
-        .review-box {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
-        }
-
-        textarea {
-            width: 500px;
-            height: 80px;
+        .product p {
+            margin: 8px 0;
         }
 
         button {
-            padding: 7px 14px;
+            padding: 8px 15px;
             cursor: pointer;
         }
 
-        .error {
-            color: red;
+        .review {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
         }
 
-        .success {
-            color: green;
+        .review-form {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 500px;
         }
     </style>
 </head>
@@ -73,119 +82,128 @@
 <h1>Stationery Mart - Products</h1>
 
 <div class="nav">
-    <a href="${pageContext.request.contextPath}/">Home</a>
-    |
-    <a href="${pageContext.request.contextPath}/cart">My Cart</a>
-    |
+    <a href="${pageContext.request.contextPath}/">Home</a> |
+    <a href="${pageContext.request.contextPath}/cart">My Cart</a> |
     <a href="${pageContext.request.contextPath}/orders">My Orders</a>
 </div>
 
 <hr>
 
-<h2>Search Products</h2>
+<!-- SEARCH PRODUCTS -->
 
 <div class="search-box">
+    <h2>Search Products</h2>
 
     <form method="get"
           action="${pageContext.request.contextPath}/products">
 
-        <label>Search:</label>
-
+        <label>Keyword:</label>
         <input type="text"
                name="keyword"
-               value="${keyword}"
+               value="<c:out value='${keyword}'/>"
                placeholder="Search product">
 
         <label>Category:</label>
-
         <input type="text"
                name="category"
-               value="${category}"
+               value="<c:out value='${category}'/>"
                placeholder="Category">
 
-        <button type="submit">
-            Search
-        </button>
-
+        <button type="submit">Search</button>
     </form>
-
 </div>
 
-<h2>Available Products</h2>
+<!-- PRODUCT LIST -->
 
 <c:choose>
-
-    <c:when test="${empty products}">
-
-        <p>No products found.</p>
-
-    </c:when>
-
-    <c:otherwise>
+    <c:when test="${not empty products}">
 
         <c:forEach var="product" items="${products}">
 
             <div class="product">
 
                 <h2>
-                    <c:out value="${product.name}" />
+                    <c:out value="${product.name}"/>
                 </h2>
 
                 <p>
                     <strong>Description:</strong>
-                    <c:out value="${product.description}" />
+                    <c:out value="${product.description}"/>
                 </p>
 
                 <p>
                     <strong>Price:</strong>
-                    ₹<c:out value="${product.price}" />
-                </p>
-
-                <p>
-                    <strong>Category:</strong>
-                    <c:out value="${product.category}" />
+                    ₹<c:out value="${product.price}"/>
                 </p>
 
                 <p>
                     <strong>Stock:</strong>
-                    <c:out value="${product.stockQty}" />
+                    <c:out value="${product.stockQty}"/>
                 </p>
 
-                <!-- Add to Cart -->
+                <p>
+                    <strong>Category:</strong>
+                    <c:out value="${product.category}"/>
+                </p>
+
+                <!-- ADD TO CART -->
+
+                <form method="post"
+                      action="${pageContext.request.contextPath}/cart">
+
+                    <input type="hidden"
+                           name="action"
+                           value="add">
+
+                    <input type="hidden"
+                           name="productId"
+                           value="${product.id}">
+
+                    <button type="submit">
+                        Add to Cart
+                    </button>
+                </form>
+
+                <hr>
+
+                <!-- CUSTOMER REVIEWS -->
+
+                <h3>Customer Reviews</h3>
 
                 <c:choose>
 
-                    <c:when test="${product.stockQty > 0}">
+                    <c:when test="${not empty reviewsByProduct[product.id]}">
 
-                        <form method="post"
-                              action="${pageContext.request.contextPath}/cart">
+                        <c:forEach var="review"
+                                   items="${reviewsByProduct[product.id]}">
 
-                            <input type="hidden"
-                                   name="productId"
-                                   value="${product.id}">
+                            <div class="review">
 
-                            <button type="submit">
-                                Add to Cart
-                            </button>
+                                <p>
+                                    <strong>Rating:</strong>
+                                    <c:out value="${review.rating}"/> / 5
+                                </p>
 
-                        </form>
+                                <p>
+                                    <strong>Comment:</strong>
+                                    <c:out value="${review.comment}"/>
+                                </p>
+
+                            </div>
+
+                        </c:forEach>
 
                     </c:when>
 
                     <c:otherwise>
-
-                        <p class="error">
-                            Out of Stock
-                        </p>
-
+                        <p>No reviews yet.</p>
                     </c:otherwise>
 
                 </c:choose>
 
+                <!-- WRITE REVIEW -->
 
-                <!-- Review -->
-
-                <div class="review-box">
+                <div class="review-form">
 
                     <h3>Write a Review</h3>
 
@@ -199,23 +217,20 @@
                         <label>Rating:</label>
 
                         <select name="rating" required>
-
-                            <option value="">Select</option>
-                            <option value="1">1 Star</option>
-                            <option value="2">2 Stars</option>
-                            <option value="3">3 Stars</option>
-                            <option value="4">4 Stars</option>
-                            <option value="5">5 Stars</option>
-
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Very Good</option>
+                            <option value="3">3 - Good</option>
+                            <option value="2">2 - Average</option>
+                            <option value="1">1 - Poor</option>
                         </select>
 
                         <br><br>
 
                         <label>Comment:</label>
-
                         <br>
 
                         <textarea name="comment"
+                                  rows="4"
                                   maxlength="1000"
                                   placeholder="Write your review"
                                   required></textarea>
@@ -228,19 +243,16 @@
 
                     </form>
 
-                    <p>
-                        <small>
-                            You can review a product only after your order
-                            has been delivered.
-                        </small>
-                    </p>
-
                 </div>
 
             </div>
 
         </c:forEach>
 
+    </c:when>
+
+    <c:otherwise>
+        <p>No products found.</p>
     </c:otherwise>
 
 </c:choose>

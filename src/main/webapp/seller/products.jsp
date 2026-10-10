@@ -1,267 +1,324 @@
-<%@ page contentType="text/html; charset=UTF-8"
-         pageEncoding="UTF-8" %>
-
-<%@ page import="java.util.List" %>
-<%@ page import="com.kalaivani.mart.model.Product" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <!DOCTYPE html>
 <html>
-
 <head>
-
     <meta charset="UTF-8">
+    <title>Seller Product Management - Stationery Mart</title>
 
-    <title>Products - Stationery Mart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
 
+        h1 {
+            color: #333;
+        }
+
+        .nav {
+            margin-bottom: 20px;
+        }
+
+        .nav a {
+            margin-right: 15px;
+        }
+
+        .add-product {
+            border: 2px solid #444;
+            padding: 20px;
+            margin-bottom: 30px;
+            width: 600px;
+        }
+
+        .product {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 650px;
+        }
+
+        .product h2 {
+            margin-top: 0;
+        }
+
+        input,
+        textarea {
+            margin: 5px 0;
+            padding: 7px;
+        }
+
+        textarea {
+            width: 500px;
+            height: 70px;
+        }
+
+        button {
+            padding: 7px 14px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+
+        .delete-button {
+            background-color: #eee;
+        }
+    </style>
 </head>
 
 <body>
 
-<h1>Stationery Mart - Products</h1>
+<h1>Seller Product Management</h1>
 
-<p>
-    <a href="<%= request.getContextPath() %>/index.jsp">
+<div class="nav">
+
+    <a href="${pageContext.request.contextPath}/">
         Home
     </a>
+
     |
-    <a href="<%= request.getContextPath() %>/cart">
-        My Cart
+
+    <a href="${pageContext.request.contextPath}/seller/products">
+        My Products
     </a>
+
     |
-    <a href="<%= request.getContextPath() %>/orders">
-        My Orders
+
+    <a href="${pageContext.request.contextPath}/seller/orders">
+        Incoming Orders
     </a>
-</p>
+
+    |
+
+    <a href="${pageContext.request.contextPath}/products">
+        Buyer Products
+    </a>
+
+</div>
 
 <hr>
 
-
 <!-- ========================= -->
-<!-- SEARCH / FILTER -->
-<!-- ========================= -->
-
-<h2>Search Products</h2>
-
-<form method="get"
-      action="<%= request.getContextPath() %>/products">
-
-    <label>Search:</label>
-
-    <input type="text"
-           name="keyword"
-           value="<%= request.getAttribute("keyword") != null
-                    ? request.getAttribute("keyword")
-                    : "" %>"
-           placeholder="Search product">
-
-    <label>Category:</label>
-
-    <input type="text"
-           name="category"
-           value="<%= request.getAttribute("category") != null
-                    ? request.getAttribute("category")
-                    : "" %>"
-           placeholder="Category">
-
-    <button type="submit">
-        Search
-    </button>
-
-</form>
-
-<hr>
-
-
-<!-- ========================= -->
-<!-- PRODUCTS -->
+<!-- ADD NEW PRODUCT -->
 <!-- ========================= -->
 
-<h2>Available Products</h2>
+<h2>Add New Product</h2>
 
-<%
-    List<Product> products =
-            (List<Product>) request.getAttribute("products");
-
-    if (products != null && !products.isEmpty()) {
-
-        for (Product product : products) {
-%>
-
-
-<!-- ========================= -->
-<!-- PRODUCT CARD -->
-<!-- ========================= -->
-
-<div style="
-    border: 1px solid #999;
-    padding: 15px;
-    margin: 15px 0;
-    width: 500px;
-">
-
-    <h3>
-        <%= product.getName() %>
-    </h3>
-
-
-    <p>
-        <strong>Description:</strong>
-        <%= product.getDescription() %>
-    </p>
-
-
-    <p>
-        <strong>Price:</strong>
-        ₹<%= product.getPrice() %>
-    </p>
-
-
-    <p>
-        <strong>Category:</strong>
-        <%= product.getCategory() %>
-    </p>
-
-
-    <p>
-        <strong>Stock:</strong>
-        <%= product.getStockQty() %>
-    </p>
-
-
-    <!-- ========================= -->
-    <!-- ADD TO CART -->
-    <!-- ========================= -->
-
-    <% if (product.getStockQty() > 0) { %>
-
-        <form method="post"
-              action="<%= request.getContextPath() %>/cart">
-
-            <input type="hidden"
-                   name="action"
-                   value="add">
-
-            <input type="hidden"
-                   name="productId"
-                   value="<%= product.getId() %>">
-
-            <button type="submit">
-                Add to Cart
-            </button>
-
-        </form>
-
-    <% } else { %>
-
-        <p>
-            <strong>Out of Stock</strong>
-        </p>
-
-    <% } %>
-
-
-    <hr>
-
-
-    <!-- ========================= -->
-    <!-- REVIEW FORM -->
-    <!-- ========================= -->
-
-    <h4>Write a Review</h4>
+<div class="add-product">
 
     <form method="post"
-          action="<%= request.getContextPath() %>/review">
+          action="${pageContext.request.contextPath}/seller/products">
 
         <input type="hidden"
-               name="productId"
-               value="<%= product.getId() %>">
+               name="action"
+               value="add">
 
+        <p>
+            <label>Product Name:</label><br>
 
-        <label>Rating:</label>
+            <input type="text"
+                   name="name"
+                   required
+                   maxlength="200">
+        </p>
 
-        <select name="rating" required>
+        <p>
+            <label>Description:</label><br>
 
-            <option value="5">
-                5 - Excellent
-            </option>
+            <textarea name="description"
+                      maxlength="1000"></textarea>
+        </p>
 
-            <option value="4">
-                4 - Very Good
-            </option>
+        <p>
+            <label>Price:</label><br>
 
-            <option value="3">
-                3 - Good
-            </option>
+            <input type="number"
+                   name="price"
+                   step="0.01"
+                   min="0"
+                   required>
+        </p>
 
-            <option value="2">
-                2 - Average
-            </option>
+        <p>
+            <label>Stock Quantity:</label><br>
 
-            <option value="1">
-                1 - Poor
-            </option>
+            <input type="number"
+                   name="stockQty"
+                   min="0"
+                   required>
+        </p>
 
-        </select>
+        <p>
+            <label>Category:</label><br>
 
-
-        <br><br>
-
-
-        <label>Comment:</label>
-
-        <br>
-
-        <textarea name="comment"
-                  rows="4"
-                  cols="45"
-                  maxlength="1000"
-                  placeholder="Write your review..."
-                  required></textarea>
-
-
-        <br><br>
-
+            <input type="text"
+                   name="category"
+                   maxlength="100"
+                   required>
+        </p>
 
         <button type="submit">
-            Submit Review
+            Add Product
         </button>
 
     </form>
 
 </div>
 
-
-<%
-        }
-
-    } else {
-%>
-
-
-<h3>
-    No products found.
-</h3>
-
-
-<%
-    }
-%>
-
-
 <hr>
 
-<p>
-    <a href="<%= request.getContextPath() %>/cart">
-        View Cart
-    </a>
-</p>
+<h2>My Products</h2>
 
-<p>
-    <a href="<%= request.getContextPath() %>/orders">
-        View My Orders
-    </a>
-</p>
+<c:choose>
+
+    <c:when test="${empty products}">
+
+        <p>No products found.</p>
+
+    </c:when>
+
+    <c:otherwise>
+
+        <c:forEach var="product" items="${products}">
+
+            <div class="product">
+
+                <h2>
+                    <c:out value="${product.name}" />
+                </h2>
+
+                <p>
+                    <strong>Product ID:</strong>
+                    <c:out value="${product.id}" />
+                </p>
+
+                <p>
+                    <strong>Description:</strong>
+                    <c:out value="${product.description}" />
+                </p>
+
+                <p>
+                    <strong>Current Price:</strong>
+                    ₹<c:out value="${product.price}" />
+                </p>
+
+                <p>
+                    <strong>Current Stock:</strong>
+                    <c:out value="${product.stockQty}" />
+                </p>
+
+                <p>
+                    <strong>Category:</strong>
+                    <c:out value="${product.category}" />
+                </p>
+
+
+                <!-- ========================= -->
+                <!-- UPDATE PRODUCT -->
+                <!-- ========================= -->
+
+                <h3>Edit Product</h3>
+
+                <form method="post"
+                      action="${pageContext.request.contextPath}/seller/products">
+
+                    <input type="hidden"
+                           name="action"
+                           value="update">
+
+                    <input type="hidden"
+                           name="id"
+                           value="${product.id}">
+
+                    <p>
+                        <label>Name:</label><br>
+
+                        <input type="text"
+                               name="name"
+                               value="${product.name}"
+                               maxlength="200"
+                               required>
+                    </p>
+
+                    <p>
+                        <label>Description:</label><br>
+
+                        <textarea name="description"
+                                  maxlength="1000"><c:out value="${product.description}" /></textarea>
+                    </p>
+
+                    <p>
+                        <label>Price:</label><br>
+
+                        <input type="number"
+                               name="price"
+                               value="${product.price}"
+                               step="0.01"
+                               min="0"
+                               required>
+                    </p>
+
+                    <p>
+                        <label>Stock Quantity:</label><br>
+
+                        <input type="number"
+                               name="stockQty"
+                               value="${product.stockQty}"
+                               min="0"
+                               required>
+                    </p>
+
+                    <p>
+                        <label>Category:</label><br>
+
+                        <input type="text"
+                               name="category"
+                               value="${product.category}"
+                               maxlength="100"
+                               required>
+                    </p>
+
+                    <button type="submit">
+                        Update Product
+                    </button>
+
+                </form>
+
+
+                <!-- ========================= -->
+                <!-- DELETE PRODUCT -->
+                <!-- ========================= -->
+
+                <h3>Delete Product</h3>
+
+                <form method="post"
+                      action="${pageContext.request.contextPath}/seller/products">
+
+                    <input type="hidden"
+                           name="action"
+                           value="delete">
+
+                    <input type="hidden"
+                           name="id"
+                           value="${product.id}">
+
+                    <button type="submit"
+                            class="delete-button"
+                            onclick="return confirm('Are you sure you want to delete this product?');">
+
+                        Delete Product
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </c:forEach>
+
+    </c:otherwise>
+
+</c:choose>
 
 </body>
-
 </html>
